@@ -3,9 +3,8 @@
 // terms of the MIT license.
 
 using System.Net;
-using System.Net.Http.Headers;
 
-using FluentAssertions;
+using AwesomeAssertions;
 
 using OpenDsc.Server.Contracts;
 using OpenDsc.Server.Endpoints;
@@ -27,9 +26,7 @@ public sealed class ScopeValueEndpointsTests : IDisposable
 
     private HttpClient CreateAuthenticatedClient()
     {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-admin-key");
-        return client;
+        return _factory.CreateAuthenticatedClient();
     }
 
     private async Task<Guid> CreateScopeTypeAsync(HttpClient client, string name)
