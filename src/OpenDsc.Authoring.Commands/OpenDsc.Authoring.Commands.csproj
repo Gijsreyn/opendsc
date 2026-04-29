@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPublishable>true</IsPublishable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <Description>PowerShell cmdlets for Microsoft DSC authoring.</Description>
   </PropertyGroup>
 
@@ -26,10 +27,12 @@
 
   <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library" PrivateAssets="all" />
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\OpenDsc.Mof\OpenDsc.Mof.csproj" />
+    <ProjectReference Include="..\OpenDsc.Schema\OpenDsc.Schema.csproj" />
   </ItemGroup>
 
   <Target Name="BuildMamlHelp" BeforeTargets="Publish" Condition="'$(SkipHelpBuild)' != 'true'">

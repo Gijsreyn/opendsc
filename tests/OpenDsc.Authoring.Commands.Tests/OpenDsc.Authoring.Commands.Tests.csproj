@@ -7,6 +7,9 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Microsoft.PowerShell.SDK 7.6.0 pulls in System.Security.Cryptography.Xml with known
+         vulnerabilities (NU1903). Suppress until the PowerShell team ships a patched SDK. -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

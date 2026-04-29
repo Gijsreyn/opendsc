@@ -17,7 +17,13 @@
         'New-DscPropertyOverride',
         'Update-DscAdaptedResourceManifest',
         'Import-DscAdaptedResourceManifest',
-        'Import-DscResourceManifest'
+        'Import-DscResourceManifest',
+        'Import-DscResourceType',
+        'New-DscConfiguration',
+        'New-DscResourceInstance',
+        'Add-DscResourceInstance',
+        'Export-DscConfiguration',
+        'ConvertTo-DscConfiguration'
     )
     VariablesToExport    = @()
     AliasesToExport      = @()

@@ -2,6 +2,275 @@
 <helpItems xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" schema="maml" xmlns="http://msh">
   <command:command>
     <command:details>
+      <command:name>Add-DscResourceInstance</command:name>
+      <maml:description>
+        <maml:para>Adds a resource instance to a DSC configuration builder.</maml:para>
+      </maml:description>
+      <command:verb>Add</command:verb>
+      <command:noun>DscResourceInstance</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Adds a DSC resource entry to a `DscConfigurationBuilder`. There are three ways to specify the resource:</maml:para>
+      <maml:para>1. **Inline** — Provide `-Type` and `-Properties` directly. 2. **Pre-built instance** — Pass a `DscResourceInstanceInfo` from    `New-DscResourceInstance` via `-Instance`. 3. **Typed object** — Provide a `DSC.*` typed object via `-TypedInstance` along    with `-Type`.</maml:para>
+      <maml:para>Dependencies can be declared with `-DependsOn`. Plain names are automatically wrapped in `[resourceId('&lt;type&gt;', '&lt;name&gt;')]` expressions. Strings starting with `[` are passed through as-is for DSC expression support.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Add-DscResourceInstance</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Configuration</maml:name>
+          <maml:description>
+            <maml:para>The configuration builder to add the resource to.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>DependsOn</maml:name>
+          <maml:description>
+            <maml:para>Names of other resources this instance depends on. Plain names are resolved to
+`[resourceId()]` expressions. Strings starting with `[` are passed through.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.String[]</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Instance</maml:name>
+          <maml:description>
+            <maml:para>A pre-built `DscResourceInstanceInfo` object from `New-DscResourceInstance`.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscResourceInstanceInfo</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Name</maml:name>
+          <maml:description>
+            <maml:para>A unique display name for this resource instance within the configuration.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>PassThru</maml:name>
+          <maml:description>
+            <maml:para>Return the configuration builder to enable pipeline chaining.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Properties</maml:name>
+          <maml:description>
+            <maml:para>A hashtable of desired-state property name-value pairs.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Collections.Hashtable</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Type</maml:name>
+          <maml:description>
+            <maml:para>The fully qualified DSC resource type (e.g., `OpenDsc.Windows/Service`).
+Required when using `-Properties` or `-TypedInstance`.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>TypedInstance</maml:name>
+          <maml:description>
+            <maml:para>A `DSC.*` typed object. Requires `-Type` to be specified. Properties are
+extracted via reflection with camelCase conversion.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.PSObject</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Configuration</maml:name>
+        <maml:description>
+          <maml:para>The configuration builder to add the resource to.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>DependsOn</maml:name>
+        <maml:description>
+          <maml:para>Names of other resources this instance depends on. Plain names are resolved to
+`[resourceId()]` expressions. Strings starting with `[` are passed through.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.String[]</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Instance</maml:name>
+        <maml:description>
+          <maml:para>A pre-built `DscResourceInstanceInfo` object from `New-DscResourceInstance`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscResourceInstanceInfo</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Name</maml:name>
+        <maml:description>
+          <maml:para>A unique display name for this resource instance within the configuration.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>PassThru</maml:name>
+        <maml:description>
+          <maml:para>Return the configuration builder to enable pipeline chaining.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Properties</maml:name>
+        <maml:description>
+          <maml:para>A hashtable of desired-state property name-value pairs.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Collections.Hashtable</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Type</maml:name>
+        <maml:description>
+          <maml:para>The fully qualified DSC resource type (e.g., `OpenDsc.Windows/Service`).
+Required when using `-Properties` or `-TypedInstance`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>TypedInstance</maml:name>
+        <maml:description>
+          <maml:para>A `DSC.*` typed object. Requires `-Type` to be specified. Properties are
+extracted via reflection with camelCase conversion.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.PSObject</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscConfigurationBuilder</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The configuration builder to add the resource to.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscConfigurationBuilder</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>When `-PassThru` is specified, returns the builder for pipeline chaining.</maml:para>
+        </maml:description>
+      </command:returnValue>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>None</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>By default, no output is produced.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>Exactly one of the following must be provided: `-Type` + `-Properties`,
+`-Instance`, or `-Type` + `-TypedInstance`.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Add a resource with inline properties ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Add a pre-built resource instance ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$instance = New-DscResourceInstance -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Instance $instance
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3 - Add a resource with dependencies ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'OpenSSH' -Type 'OpenDsc.Windows/OptionalFeature' -Properties @{
+    name = 'OpenSSH.Server'
+}
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+} -DependsOn 'OpenSSH'
+```</maml:para>
+          <maml:para>The dependency `'OpenSSH'` is resolved to
+`[resourceId('OpenDsc.Windows/OptionalFeature', 'OpenSSH')]`.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 4 - Chain additions with PassThru ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+New-DscConfiguration |
+    Add-DscResourceInstance -Name 'A' -Type 'Type/A' -Properties @{ id = '1' } -PassThru |
+    Add-DscResourceInstance -Name 'B' -Type 'Type/B' -Properties @{ id = '2' } -PassThru |
+    Export-DscConfiguration -Path ./config.dsc.yaml
+```</maml:para>
+          <maml:para>Uses `-PassThru` to chain multiple additions and export in one pipeline.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 5 - Use a typed DSC object ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -Type 'OpenDsc.Windows/Service'
+$svc = [DSC.OpenDsc.Windows.Service]@{ Name = 'sshd'; Status = 'Running' }
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -TypedInstance $svc
+```</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>New-DscConfiguration</maml:linkText>
+        <command:uri>New-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-DscResourceInstance</maml:linkText>
+        <command:uri>New-DscResourceInstance.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Export-DscConfiguration</maml:linkText>
+        <command:uri>Export-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>ConvertTo-DscConfiguration</maml:linkText>
+        <command:uri>ConvertTo-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>ConvertFrom-DscConfigurationMof</command:name>
       <maml:description>
         <maml:para>Converts DSC v1 compiled MOF text to a DSC v3 configuration document.</maml:para>
@@ -224,9 +493,275 @@ Get-Content -Path ./MSFT_xWebsite.schema.mof |
   </command:command>
   <command:command>
     <command:details>
+      <command:name>ConvertTo-DscConfiguration</command:name>
+      <maml:description>
+        <maml:para>Converts a DSC configuration builder to a YAML or JSON string.</maml:para>
+      </maml:description>
+      <command:verb>ConvertTo</command:verb>
+      <command:noun>DscConfiguration</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Serializes a `DscConfigurationBuilder` to a YAML or JSON string. Unlike `Export-DscConfiguration`, this cmdlet returns the content as a string instead of writing to a file. The default format is YAML.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>ConvertTo-DscConfiguration</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Configuration</maml:name>
+          <maml:description>
+            <maml:para>The configuration builder to convert.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Format</maml:name>
+          <maml:description>
+            <maml:para>The output format. Defaults to `Yaml`.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationFormat</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Configuration</maml:name>
+        <maml:description>
+          <maml:para>The configuration builder to convert.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Format</maml:name>
+        <maml:description>
+          <maml:para>The output format. Defaults to `Yaml`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationFormat</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscConfigurationBuilder</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The configuration builder to convert.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>System.String</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The serialized configuration document as a YAML or JSON string.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para />
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Convert to YAML (default) ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+$config | ConvertTo-DscConfiguration
+```</maml:para>
+          <maml:para>Returns the configuration as a YAML string.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Convert to JSON ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config | ConvertTo-DscConfiguration -Format Json
+```</maml:para>
+          <maml:para>Returns the configuration as a formatted JSON string.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3 - Pipe to Set-Content ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config | ConvertTo-DscConfiguration -Format Json | Set-Content -Path ./config.dsc.json
+```</maml:para>
+          <maml:para>Converts to JSON and saves to a file using standard PowerShell cmdlets.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>New-DscConfiguration</maml:linkText>
+        <command:uri>New-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Export-DscConfiguration</maml:linkText>
+        <command:uri>Export-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>Export-DscConfiguration</command:name>
+      <maml:description>
+        <maml:para>Exports a DSC configuration builder to a YAML or JSON file.</maml:para>
+      </maml:description>
+      <command:verb>Export</command:verb>
+      <command:noun>DscConfiguration</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Serializes a `DscConfigurationBuilder` to a file. The output format is auto-detected from the file extension (`.yaml` or `.yml` for YAML, `.json` for JSON) unless overridden with `-Format`. Parent directories are created automatically.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Export-DscConfiguration</maml:name>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Configuration</maml:name>
+          <maml:description>
+            <maml:para>The configuration builder to export.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Format</maml:name>
+          <maml:description>
+            <maml:para>Explicitly sets the output format, overriding file extension detection.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationFormat</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Path</maml:name>
+          <maml:description>
+            <maml:para>The output file path. The format is inferred from the extension unless
+`-Format` is specified. Recognized extensions: `.yaml`, `.yml` (YAML),
+`.json` (JSON). Unrecognized extensions default to YAML.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Configuration</maml:name>
+        <maml:description>
+          <maml:para>The configuration builder to export.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationBuilder</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Format</maml:name>
+        <maml:description>
+          <maml:para>Explicitly sets the output format, overriding file extension detection.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">OpenDsc.Authoring.Commands.DscConfigurationFormat</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The output file path. The format is inferred from the extension unless
+`-Format` is specified. Recognized extensions: `.yaml`, `.yml` (YAML),
+`.json` (JSON). Unrecognized extensions default to YAML.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscConfigurationBuilder</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>The configuration builder to export.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>None</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet writes to a file and produces no output.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para />
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Export to YAML ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+$config | Export-DscConfiguration -Path ./deploy.dsc.yaml
+```</maml:para>
+          <maml:para>Exports the configuration as a YAML file, auto-detected from the `.yaml`
+extension.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Export to JSON ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config | Export-DscConfiguration -Path ./deploy.dsc.json
+```</maml:para>
+          <maml:para>Exports the configuration as a JSON file.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3 - Override format detection ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config | Export-DscConfiguration -Path ./deploy.dsc -Format Json
+```</maml:para>
+          <maml:para>Writes JSON regardless of the file extension.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>New-DscConfiguration</maml:linkText>
+        <command:uri>New-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>ConvertTo-DscConfiguration</maml:linkText>
+        <command:uri>ConvertTo-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>Import-DscAdaptedResourceManifest</command:name>
       <maml:description>
-        <maml:para>Imports adapted resource manifest objects from `.dsc.adaptedResource.json` files.</maml:para>
+        <maml:para>Imports adapted resource manifest objects from `.dsc.adaptedResource.json`
+files.</maml:para>
       </maml:description>
       <command:verb>Import</command:verb>
       <command:noun>DscAdaptedResourceManifest</command:noun>
@@ -438,9 +973,208 @@ $list.AdaptedResources.Count
   </command:command>
   <command:command>
     <command:details>
+      <command:name>Import-DscResourceType</command:name>
+      <maml:description>
+        <maml:para>Discovers DSC resource types and generates .NET types in the current session.</maml:para>
+      </maml:description>
+      <command:verb>Import</command:verb>
+      <command:noun>DscResourceType</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Runs `dsc resource list` to discover available DSC v3 resources and compiles .NET types into the current PowerShell session under the `DSC.*` namespace. These types provide IntelliSense and tab-completion when authoring configurations with `New-DscResourceInstance`.</maml:para>
+      <maml:para>Results are cached for the session. Use `-Force` to re-discover and regenerate types. Use `-PassThru` to return the discovered resource metadata instead of generating types.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Import-DscResourceType</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Adapter</maml:name>
+          <maml:description>
+            <maml:para>Filters discovered resources to those provided by a specific adapter. Implies
+`-IncludeAdapted`.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Force</maml:name>
+          <maml:description>
+            <maml:para>Bypass the session-level cache and re-discover resources from the DSC CLI.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>IncludeAdapted</maml:name>
+          <maml:description>
+            <maml:para>Include resources exposed through adapters (e.g., PowerShell DSC v1 resources).</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>PassThru</maml:name>
+          <maml:description>
+            <maml:para>Return `DscDiscoveredResource` objects instead of generating .NET types.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="true" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Type</maml:name>
+          <maml:description>
+            <maml:para>One or more wildcard patterns to filter which resource types are imported.
+When omitted, all discovered resources are imported.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.String[]</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Adapter</maml:name>
+        <maml:description>
+          <maml:para>Filters discovered resources to those provided by a specific adapter. Implies
+`-IncludeAdapted`.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Force</maml:name>
+        <maml:description>
+          <maml:para>Bypass the session-level cache and re-discover resources from the DSC CLI.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>IncludeAdapted</maml:name>
+        <maml:description>
+          <maml:para>Include resources exposed through adapters (e.g., PowerShell DSC v1 resources).</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>PassThru</maml:name>
+        <maml:description>
+          <maml:para>Return `DscDiscoveredResource` objects instead of generating .NET types.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.SwitchParameter</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="true" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Type</maml:name>
+        <maml:description>
+          <maml:para>One or more wildcard patterns to filter which resource types are imported.
+When omitted, all discovered resources are imported.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.String[]</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>None</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet does not accept pipeline input.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscDiscoveredResource</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>When `-PassThru` is specified, returns metadata about each discovered resource.</maml:para>
+        </maml:description>
+      </command:returnValue>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>None</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>By default, generates types in the session and produces no output.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>The generated types use the naming convention `DSC.&lt;Type&gt;` where slashes are
+replaced with dots. For example, `OpenDsc.Windows/Service` becomes
+`DSC.OpenDsc.Windows.Service`.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Import all native resource types ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType
+```</maml:para>
+          <maml:para>Discovers all non-adapted DSC resources and generates `DSC.*` types in the
+session.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Import resources matching a wildcard ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -Type 'OpenDsc.Windows/*'
+```</maml:para>
+          <maml:para>Imports only resources whose type matches the wildcard pattern.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3 - Include adapted resources ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -IncludeAdapted
+```</maml:para>
+          <maml:para>Discovers both native and adapter-wrapped resources.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 4 - List available resources without generating types ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -PassThru
+```</maml:para>
+          <maml:para>Returns `DscDiscoveredResource` objects for inspection without compiling types.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 5 - Force re-discovery ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -Force
+```</maml:para>
+          <maml:para>Bypasses the session cache and re-runs `dsc resource list`.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>New-DscResourceInstance</maml:linkText>
+        <command:uri>New-DscResourceInstance.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-DscConfiguration</maml:linkText>
+        <command:uri>New-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>New-DscAdaptedResourceManifest</command:name>
       <maml:description>
-        <maml:para>Creates adapted resource manifest objects from class-based PowerShell DSC resources.</maml:para>
+        <maml:para>Creates adapted resource manifest objects from class-based PowerShell DSC
+resources.</maml:para>
       </maml:description>
       <command:verb>New</command:verb>
       <command:noun>DscAdaptedResourceManifest</command:noun>
@@ -559,9 +1293,114 @@ found.</maml:para>
   </command:command>
   <command:command>
     <command:details>
+      <command:name>New-DscConfiguration</command:name>
+      <maml:description>
+        <maml:para>Creates a new DSC configuration builder.</maml:para>
+      </maml:description>
+      <command:verb>New</command:verb>
+      <command:noun>DscConfiguration</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Creates a new `DscConfigurationBuilder` that can be used to incrementally construct a DSC v3 configuration document. Add resource instances with `Add-DscResourceInstance`, then export the result with `Export-DscConfiguration` or `ConvertTo-DscConfiguration`.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>New-DscConfiguration</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Schema</maml:name>
+          <maml:description>
+            <maml:para>The JSON schema URI for the configuration document. Defaults to the official
+DSC v3 bundled config document schema.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Schema</maml:name>
+        <maml:description>
+          <maml:para>The JSON schema URI for the configuration document. Defaults to the official
+DSC v3 bundled config document schema.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>None</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>This cmdlet does not accept pipeline input.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscConfigurationBuilder</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>A mutable builder for constructing DSC v3 configuration documents.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para />
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Create a configuration and add a resource ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+$config | Export-DscConfiguration -Path ./deploy.dsc.yaml
+```</maml:para>
+          <maml:para>Creates a configuration, adds a Windows service resource, and exports to YAML.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Create a configuration with a custom schema ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$config = New-DscConfiguration -Schema 'https://example.com/schema.json'
+```</maml:para>
+          <maml:para>Creates a builder with a custom JSON schema URI.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Add-DscResourceInstance</maml:linkText>
+        <command:uri>Add-DscResourceInstance.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Export-DscConfiguration</maml:linkText>
+        <command:uri>Export-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>ConvertTo-DscConfiguration</maml:linkText>
+        <command:uri>ConvertTo-DscConfiguration.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
       <command:name>New-DscPropertyOverride</command:name>
       <maml:description>
-        <maml:para>Creates a DscPropertyOverride object for use with Update-DscAdaptedResourceManifest.</maml:para>
+        <maml:para>Creates a DscPropertyOverride object for use with
+Update-DscAdaptedResourceManifest.</maml:para>
       </maml:description>
       <command:verb>New</command:verb>
       <command:noun>DscPropertyOverride</command:noun>
@@ -729,7 +1568,8 @@ $overrides = @(
 )
 $manifest | Update-DscAdaptedResourceManifest -PropertyOverride $overrides
 ```</maml:para>
-          <maml:para>Creates multiple overrides and pipes them to `Update-DscAdaptedResourceManifest`.</maml:para>
+          <maml:para>Creates multiple overrides and pipes them to
+`Update-DscAdaptedResourceManifest`.</maml:para>
         </maml:introduction>
         <dev:code />
         <dev:remarks />
@@ -739,6 +1579,153 @@ $manifest | Update-DscAdaptedResourceManifest -PropertyOverride $overrides
       <maml:navigationLink>
         <maml:linkText>Update-DscAdaptedResourceManifest</maml:linkText>
         <command:uri>Update-DscAdaptedResourceManifest.md</command:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command>
+    <command:details>
+      <command:name>New-DscResourceInstance</command:name>
+      <maml:description>
+        <maml:para>Creates a DSC resource instance from a type name and properties.</maml:para>
+      </maml:description>
+      <command:verb>New</command:verb>
+      <command:noun>DscResourceInstance</command:noun>
+    </command:details>
+    <maml:description>
+      <maml:para>Creates a `DscResourceInstanceInfo` object that pairs a DSC resource type with its desired-state properties. Properties can be supplied as a hashtable or extracted from a typed object (e.g., a `DSC.*` type generated by `Import-DscResourceType`).</maml:para>
+      <maml:para>The resulting object can be passed to `Add-DscResourceInstance` via the `-Instance` parameter.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>New-DscResourceInstance</maml:name>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Instance</maml:name>
+          <maml:description>
+            <maml:para>A typed object or PSObject whose public properties are extracted as resource
+properties. Property names are converted to camelCase. Enum values are
+serialized as strings.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Management.Automation.PSObject</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+          <maml:name>Properties</maml:name>
+          <maml:description>
+            <maml:para>A hashtable of desired-state property name-value pairs.</maml:para>
+          </maml:description>
+          <command:parameterValue required="false" variableLength="true">System.Collections.Hashtable</command:parameterValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+          <maml:name>Type</maml:name>
+          <maml:description>
+            <maml:para>The fully qualified DSC resource type (e.g., `OpenDsc.Windows/Service`).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Instance</maml:name>
+        <maml:description>
+          <maml:para>A typed object or PSObject whose public properties are extracted as resource
+properties. Property names are converted to camelCase. Enum values are
+serialized as strings.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Management.Automation.PSObject</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="false" globbing="false" pipelineInput="false" position="Named" aliases="none">
+        <maml:name>Properties</maml:name>
+        <maml:description>
+          <maml:para>A hashtable of desired-state property name-value pairs.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="true">System.Collections.Hashtable</command:parameterValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="false" globbing="false" pipelineInput="false" position="0" aliases="none">
+        <maml:name>Type</maml:name>
+        <maml:description>
+          <maml:para>The fully qualified DSC resource type (e.g., `OpenDsc.Windows/Service`).</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="true">System.String</command:parameterValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <dev:name>System.Management.Automation.PSObject</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>A typed or untyped object whose properties are extracted as resource properties.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <dev:name>OpenDsc.Authoring.Commands.DscResourceInstanceInfo</dev:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>An object containing the resource type and properties dictionary.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para>Either `-Instance` or `-Properties` must be specified, but not both.</maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>--------- Example 1 - Create an instance from a hashtable ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$instance = New-DscResourceInstance -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+```</maml:para>
+          <maml:para>Creates a resource instance with properties from a hashtable.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 2 - Create an instance from a typed object ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+Import-DscResourceType -Type 'OpenDsc.Windows/Service'
+$svc = [DSC.OpenDsc.Windows.Service]@{ Name = 'sshd'; Status = 'Running' }
+$instance = $svc | New-DscResourceInstance -Type 'OpenDsc.Windows/Service'
+```</maml:para>
+          <maml:para>Uses a generated `DSC.*` type piped as the `-Instance` parameter.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+      <command:example>
+        <maml:title>--------- Example 3 - Add the instance to a configuration ---------</maml:title>
+        <maml:introduction>
+          <maml:para>```powershell
+$instance = New-DscResourceInstance -Type 'OpenDsc.Windows/Service' -Properties @{
+    name   = 'sshd'
+    status = 'Running'
+}
+$config = New-DscConfiguration
+$config | Add-DscResourceInstance -Name 'SSHD' -Instance $instance
+```</maml:para>
+          <maml:para>Creates an instance and adds it to a configuration builder.</maml:para>
+        </maml:introduction>
+        <dev:code />
+        <dev:remarks />
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Add-DscResourceInstance</maml:linkText>
+        <command:uri>Add-DscResourceInstance.md</command:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Import-DscResourceType</maml:linkText>
+        <command:uri>Import-DscResourceType.md</command:uri>
       </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
@@ -830,7 +1817,8 @@ serialization to the `.dsc.manifests.json` format.</maml:para>
 $adapted = New-DscAdaptedResourceManifest -Path ./MyModule/MyModule.psd1
 New-DscResourceManifest -AdaptedResource $adapted
 ```</maml:para>
-          <maml:para>Creates a manifests list from adapted resource manifests generated from a module.</maml:para>
+          <maml:para>Creates a manifests list from adapted resource manifests generated from a
+module.</maml:para>
         </maml:introduction>
         <dev:code />
         <dev:remarks />
