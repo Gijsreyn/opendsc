@@ -7,7 +7,9 @@ using System.Net;
 using AwesomeAssertions;
 
 using OpenDsc.Schema;
-using OpenDsc.Server.Contracts;
+using OpenDsc.Contracts.Nodes;
+using OpenDsc.Contracts.Lcm;
+using OpenDsc.Contracts.Reports;
 
 using Xunit;
 
@@ -33,7 +35,7 @@ public class ReportEndpointsTests : IDisposable
             Fqdn = $"test-node-{Guid.NewGuid()}.example.com"
         });
 
-        var registration = await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>();
+        var registration = await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default);
         return registration!.NodeId;
     }
 
@@ -71,7 +73,7 @@ public class ReportEndpointsTests : IDisposable
         var response = await client.GetAsync($"/api/v1/nodes/{nodeId}/reports", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var reports = await response.Content.ReadFromJsonAsync<List<ReportSummary>>(TestContext.Current.CancellationToken);
+        var reports = await response.Content.ReadFromJsonAsync<List<ReportSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         reports.Should().NotBeNull();
     }
 
@@ -92,7 +94,7 @@ public class ReportEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/reports", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var reports = await response.Content.ReadFromJsonAsync<List<ReportSummary>>(TestContext.Current.CancellationToken);
+        var reports = await response.Content.ReadFromJsonAsync<List<ReportSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         reports.Should().NotBeNull();
     }
 
@@ -137,7 +139,7 @@ public class ReportEndpointsTests : IDisposable
         var getResponse = await adminClient.GetAsync($"/api/v1/nodes/{nodeId}/reports", TestContext.Current.CancellationToken);
 
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var reports = await getResponse.Content.ReadFromJsonAsync<List<ReportSummary>>(TestContext.Current.CancellationToken);
+        var reports = await getResponse.Content.ReadFromJsonAsync<List<ReportSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         reports.Should().NotBeNull();
         reports!.Should().BeEmpty();
     }
@@ -160,8 +162,9 @@ public class ReportEndpointsTests : IDisposable
         using var adminClient = _factory.CreateAuthenticatedClient();
         var historyResponse = await adminClient.GetAsync($"/api/v1/nodes/{nodeId}/status-history", TestContext.Current.CancellationToken);
         historyResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var events = await historyResponse.Content.ReadFromJsonAsync<List<NodeStatusEventSummary>>(TestContext.Current.CancellationToken);
+        var events = await historyResponse.Content.ReadFromJsonAsync<List<NodeStatusEventSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         events.Should().NotBeNull();
         events!.Should().BeEmpty();
     }
 }
+

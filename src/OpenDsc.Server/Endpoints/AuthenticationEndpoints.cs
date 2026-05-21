@@ -8,12 +8,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
+using OpenDsc.Contracts.Users;
 using OpenDsc.Server.Authorization;
-using OpenDsc.Server.Data;
-using OpenDsc.Server.Entities;
 using OpenDsc.Server.Services;
 
 namespace OpenDsc.Server.Endpoints;
@@ -69,44 +67,18 @@ public static class AuthenticationEndpoints
             .RequireAuthorization();
     }
 
-    private static async Task<Results<Ok<LoginResponse>, UnauthorizedHttpResult>> Login(
+    private static async Task<Results<Ok<LoginResult>, UnauthorizedHttpResult>> Login(
         [FromBody] LoginRequest request,
-        ServerDbContext db,
-        IPasswordHasher passwordHasher,
+        IUserService userService,
         HttpContext httpContext)
     {
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive);
-
-        if (user == null || user.PasswordHash == null || user.PasswordSalt == null)
+        var auth = await userService.AuthenticateAsync(request.Username, request.Password);
+        if (!auth.IsAuthenticated || auth.User is null)
         {
             return TypedResults.Unauthorized();
         }
 
-        if (user.AccountType == AccountType.ServiceAccount)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        if (!passwordHasher.ValidatePassword(request.Password, user.PasswordHash, user.PasswordSalt))
-        {
-            user.AccessFailedCount++;
-            if (user.AccessFailedCount >= 5)
-            {
-                user.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
-            }
-            await db.SaveChangesAsync();
-            return TypedResults.Unauthorized();
-        }
-
-        user.AccessFailedCount = 0;
-        user.LockoutEnd = null;
-        await db.SaveChangesAsync();
+        var user = auth.User;
 
         var claims = new List<Claim>
         {
@@ -127,7 +99,7 @@ public static class AuthenticationEndpoints
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
             });
 
-        return TypedResults.Ok(new LoginResponse
+        return TypedResults.Ok(new LoginResult
         {
             UserId = user.Id,
             Username = user.Username,
@@ -148,8 +120,8 @@ public static class AuthenticationEndpoints
         return Results.Redirect("/login");
     }
 
-    private static async Task<Results<Ok<CurrentUserResponse>, UnauthorizedHttpResult>> GetCurrentUser(
-        ServerDbContext db,
+    private static async Task<Results<Ok<CurrentUserDetails>, UnauthorizedHttpResult>> GetCurrentUser(
+        IUserService userService,
         IUserContextService userContext)
     {
         var userId = userContext.GetCurrentUserId();
@@ -158,42 +130,18 @@ public static class AuthenticationEndpoints
             return TypedResults.Unauthorized();
         }
 
-        var user = await db.Users.FindAsync(userId.Value);
-        if (user == null)
+        var user = await userService.GetCurrentUserAsync(userId.Value);
+        if (user is null)
         {
             return TypedResults.Unauthorized();
         }
 
-        var roleIds = await db.UserRoles
-            .Where(ur => ur.UserId == userId.Value)
-            .Select(ur => ur.RoleId)
-            .ToListAsync();
-
-        var roles = await db.Roles
-            .Where(r => roleIds.Contains(r.Id))
-            .Select(r => r.Name)
-            .ToListAsync();
-
-        var authProvider = await db.ExternalLogins
-            .Where(el => el.UserId == userId.Value)
-            .Select(el => el.Provider)
-            .FirstOrDefaultAsync();
-
-        return TypedResults.Ok(new CurrentUserResponse
-        {
-            UserId = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            AccountType = user.AccountType.ToString(),
-            Roles = roles,
-            AuthProvider = authProvider
-        });
+        return TypedResults.Ok(user);
     }
 
     private static async Task<Results<NoContent, BadRequest<string>, UnauthorizedHttpResult>> ChangePassword(
         [FromBody] ChangePasswordRequest request,
-        ServerDbContext db,
-        IPasswordHasher passwordHasher,
+        IUserService userService,
         IUserContextService userContext,
         IMemoryCache cache)
     {
@@ -203,35 +151,25 @@ public static class AuthenticationEndpoints
             return TypedResults.Unauthorized();
         }
 
-        var user = await db.Users.FindAsync(userId.Value);
-        if (user == null)
+        try
+        {
+            await userService.ChangePasswordAsync(userId.Value, request);
+        }
+        catch (KeyNotFoundException)
         {
             return TypedResults.Unauthorized();
         }
-
-        if (user.PasswordHash == null || user.PasswordSalt == null)
+        catch (InvalidOperationException ex)
         {
-            return TypedResults.BadRequest("External authentication users cannot change their password here.");
+            return TypedResults.BadRequest(ex.Message);
         }
 
-        if (!passwordHasher.ValidatePassword(request.CurrentPassword, user.PasswordHash, user.PasswordSalt))
-        {
-            return TypedResults.BadRequest("Current password is incorrect");
-        }
-
-        var (newHash, newSalt) = passwordHasher.HashPassword(request.NewPassword);
-        user.PasswordHash = newHash;
-        user.PasswordSalt = newSalt;
-        user.RequirePasswordChange = false;
-        user.ModifiedAt = DateTimeOffset.UtcNow;
-
-        await db.SaveChangesAsync();
         cache.Remove($"pwd-change-{userId.Value}");
 
         return TypedResults.NoContent();
     }
 
-    private static async Task<Results<Created<CreateTokenResponse>, ValidationProblem, UnauthorizedHttpResult>> CreateToken(
+    private static async Task<Results<Created<TokenCreationResult>, ValidationProblem, UnauthorizedHttpResult>> CreateToken(
         [FromBody] CreateTokenRequest request,
         IPersonalAccessTokenService patService,
         IUserContextService userContext)
@@ -265,7 +203,7 @@ public static class AuthenticationEndpoints
             scopes,
             request.ExpiresAt);
 
-        return TypedResults.Created($"/api/v1/auth/tokens/{metadata.Id}", new CreateTokenResponse
+        return TypedResults.Created($"/api/v1/auth/tokens/{metadata.Id}", new TokenCreationResult
         {
             Token = token,
             TokenId = metadata.Id,
@@ -289,25 +227,13 @@ public static class AuthenticationEndpoints
 
         var tokens = await patService.GetUserTokensAsync(userId.Value);
 
-        var metadata = tokens.Select(t => new TokenMetadata
-        {
-            Id = t.Id,
-            Name = t.Name,
-            TokenPrefix = t.TokenPrefix,
-            ExpiresAt = t.ExpiresAt,
-            LastUsedAt = t.LastUsedAt,
-            IsRevoked = t.IsRevoked,
-            CreatedAt = t.CreatedAt
-        }).ToList();
-
-        return TypedResults.Ok(metadata);
+        return TypedResults.Ok(tokens);
     }
 
     private static async Task<Results<NoContent, UnauthorizedHttpResult, NotFound>> RevokeToken(
         Guid id,
         IPersonalAccessTokenService patService,
-        IUserContextService userContext,
-        ServerDbContext db)
+        IUserContextService userContext)
     {
         var userId = userContext.GetCurrentUserId();
         if (userId == null)
@@ -315,78 +241,14 @@ public static class AuthenticationEndpoints
             return TypedResults.Unauthorized();
         }
 
-        var token = await db.PersonalAccessTokens.FindAsync(id);
-        if (token == null)
+        var userTokens = await patService.GetUserTokensAsync(userId.Value);
+        if (!userTokens.Any(t => t.Id == id))
         {
             return TypedResults.NotFound();
-        }
-
-        if (token.UserId != userId.Value)
-        {
-            return TypedResults.Unauthorized();
         }
 
         await patService.RevokeTokenAsync(id);
 
         return TypedResults.NoContent();
     }
-}
-
-public sealed class LoginRequest
-{
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-}
-
-public sealed class LoginResponse
-{
-    public Guid UserId { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public bool RequirePasswordChange { get; set; }
-}
-
-public sealed class CurrentUserResponse
-{
-    public Guid UserId { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string AccountType { get; set; } = string.Empty;
-    public List<string> Roles { get; set; } = [];
-    public string? AuthProvider { get; set; }
-}
-
-public sealed class ChangePasswordRequest
-{
-    public string CurrentPassword { get; set; } = string.Empty;
-    public string NewPassword { get; set; } = string.Empty;
-}
-
-public sealed class CreateTokenRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string[] Scopes { get; set; } = [];
-    public DateTimeOffset? ExpiresAt { get; set; }
-}
-
-public sealed class CreateTokenResponse
-{
-    public string Token { get; set; } = string.Empty;
-    public Guid TokenId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string TokenPrefix { get; set; } = string.Empty;
-    public string[] Scopes { get; set; } = [];
-    public DateTimeOffset? ExpiresAt { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-}
-
-public sealed class TokenMetadata
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string TokenPrefix { get; set; } = string.Empty;
-    public DateTimeOffset? ExpiresAt { get; set; }
-    public DateTimeOffset? LastUsedAt { get; set; }
-    public bool IsRevoked { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
 }

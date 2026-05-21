@@ -6,7 +6,7 @@ using System.Net;
 
 using AwesomeAssertions;
 
-using OpenDsc.Server.Endpoints;
+using OpenDsc.Contracts.Retention;
 using OpenDsc.Server.Services;
 
 using Xunit;
@@ -38,13 +38,14 @@ public sealed class RetentionEndpointsTests : IDisposable
         {
             KeepVersions = 3,
             KeepDays = 30,
+            KeepReleaseVersions = true,
             DryRun = true
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/retention/configurations/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -58,6 +59,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         {
             KeepVersions = 3,
             KeepDays = 30,
+            KeepReleaseVersions = true,
             DryRun = true
         };
 
@@ -75,13 +77,14 @@ public sealed class RetentionEndpointsTests : IDisposable
         {
             KeepVersions = 2,
             KeepDays = 30,
+            KeepReleaseVersions = true,
             DryRun = true
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/retention/parameters/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -95,6 +98,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         {
             KeepVersions = 2,
             KeepDays = 30,
+            KeepReleaseVersions = true,
             DryRun = true
         };
 
@@ -119,7 +123,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         var response = await client.PostAsJsonAsync("/api/v1/retention/configurations/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -133,13 +137,14 @@ public sealed class RetentionEndpointsTests : IDisposable
         {
             KeepVersions = 3,
             KeepDays = 30,
+            KeepReleaseVersions = true,
             DryRun = true
         };
 
         var response = await client.PostAsJsonAsync("/api/v1/retention/composite-configurations/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -149,7 +154,7 @@ public sealed class RetentionEndpointsTests : IDisposable
     {
         using var client = _factory.CreateClient();
 
-        var request = new CleanupRequest { KeepVersions = 3, KeepDays = 30, DryRun = true };
+        var request = new CleanupRequest { KeepVersions = 3, KeepDays = 30, KeepReleaseVersions = true, DryRun = true };
 
         var response = await client.PostAsJsonAsync("/api/v1/retention/composite-configurations/cleanup", request, TestContext.Current.CancellationToken);
 
@@ -164,7 +169,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/retention/runs", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var runs = await response.Content.ReadFromJsonAsync<List<RetentionRunDto>>(TestContext.Current.CancellationToken);
+        var runs = await response.Content.ReadFromJsonAsync<List<RetentionRunSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         runs.Should().NotBeNull();
         runs!.Should().BeEmpty();
     }
@@ -174,13 +179,13 @@ public sealed class RetentionEndpointsTests : IDisposable
     {
         using var client = CreateAuthenticatedClient();
 
-        var request = new CleanupRequest { KeepVersions = 10, KeepDays = 90, DryRun = false };
+        var request = new CleanupRequest { KeepVersions = 10, KeepDays = 90, KeepReleaseVersions = true, DryRun = false };
         await client.PostAsJsonAsync("/api/v1/retention/configurations/cleanup", request, TestContext.Current.CancellationToken);
 
         var response = await client.GetAsync("/api/v1/retention/runs?limit=10", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var runs = await response.Content.ReadFromJsonAsync<List<RetentionRunDto>>(TestContext.Current.CancellationToken);
+        var runs = await response.Content.ReadFromJsonAsync<List<RetentionRunSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         runs.Should().NotBeNull();
         runs!.Should().HaveCountGreaterThanOrEqualTo(1);
     }
@@ -210,7 +215,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         var response = await client.PostAsJsonAsync("/api/v1/retention/reports/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -242,7 +247,7 @@ public sealed class RetentionEndpointsTests : IDisposable
         var response = await client.PostAsJsonAsync("/api/v1/retention/status-events/cleanup", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<VersionRetentionResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result.Should().NotBeNull();
         result!.IsDryRun.Should().BeTrue();
     }
@@ -259,3 +264,4 @@ public sealed class RetentionEndpointsTests : IDisposable
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
+

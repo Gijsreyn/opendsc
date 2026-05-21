@@ -4,7 +4,8 @@
 
 using Microsoft.EntityFrameworkCore;
 
-using OpenDsc.Lcm.Contracts;
+using OpenDsc.Contracts.Configurations;
+using OpenDsc.Contracts.Lcm;
 using OpenDsc.Server.Entities;
 
 namespace OpenDsc.Server.Data;
@@ -609,7 +610,7 @@ public sealed class ServerDbContext(DbContextOptions<ServerDbContext> options) :
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.StartedAt);
             entity.HasIndex(e => e.VersionType);
-            entity.Property(e => e.VersionType).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.VersionType).HasConversion<string>().IsRequired();
             entity.Property(e => e.Error).HasMaxLength(2000);
             entity.Property(e => e.StartedAt)
                 .HasConversion(

@@ -6,9 +6,10 @@ using System.Net;
 
 using AwesomeAssertions;
 
-using OpenDsc.Server.Contracts;
-using OpenDsc.Server.Endpoints;
-using OpenDsc.Server.Entities;
+using OpenDsc.Contracts.Nodes;
+using OpenDsc.Contracts.Lcm;
+using OpenDsc.Contracts.Configurations;
+using OpenDsc.Contracts.Settings;
 
 using Xunit;
 
@@ -33,8 +34,8 @@ public sealed class NodeTagEndpointsTests : IDisposable
     private async Task<Guid> CreateScopeTypeAsync(HttpClient client, string name)
     {
         var request = new CreateScopeTypeRequest { Name = name, ValueMode = ScopeValueMode.Restricted };
-        var response = await client.PostAsJsonAsync("/api/v1/scope-types", request, SourceGenerationContext.Default.Options);
-        var result = await response.Content.ReadFromJsonAsync<ScopeTypeDto>(SourceGenerationContext.Default.Options);
+        var response = await client.PostAsJsonAsync("/api/v1/scope-types", request, TestJsonOptions.Default);
+        var result = await response.Content.ReadFromJsonAsync<ScopeTypeDetails>(TestJsonOptions.Default);
         return result!.Id;
     }
 
@@ -42,7 +43,7 @@ public sealed class NodeTagEndpointsTests : IDisposable
     {
         var request = new CreateScopeValueRequest { Value = value };
         var response = await client.PostAsJsonAsync($"/api/v1/scope-types/{scopeTypeId}/values", request);
-        var result = await response.Content.ReadFromJsonAsync<ScopeValueDto>();
+        var result = await response.Content.ReadFromJsonAsync<ScopeValueDetails>(TestJsonOptions.Default);
         return result!.Id;
     }
 
@@ -54,23 +55,23 @@ public sealed class NodeTagEndpointsTests : IDisposable
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
         registrationKeyResponse.EnsureSuccessStatusCode();
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         regKey.Should().NotBeNull();
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "test.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var scopeTypeId = await CreateScopeTypeAsync(client, "Environment");
         var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "Production");
-        var request = new AssignNodeTagRequest { ScopeValueId = scopeValueId };
+        var request = new AddNodeTagRequest { ScopeValueId = scopeValueId };
 
         var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", request, TestContext.Current.CancellationToken);
 
         response.EnsureSuccessStatusCode();
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var tag = await response.Content.ReadFromJsonAsync<NodeTagDto>(TestContext.Current.CancellationToken);
+        var tag = await response.Content.ReadFromJsonAsync<NodeTagSummary>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         tag.Should().NotBeNull();
         tag!.NodeId.Should().Be(nodeId);
         tag.ScopeValueId.Should().Be(scopeValueId);
@@ -85,20 +86,20 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "test2.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var scopeTypeId = await CreateScopeTypeAsync(client, "Region");
         var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "US");
-        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
 
         var response = await client.GetAsync($"/api/v1/nodes/{nodeId}/tags", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<List<NodeTagDto>>(TestContext.Current.CancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<List<NodeTagSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         result!.Should().Contain(t => t.ScopeValue == "US");
     }
 
@@ -109,18 +110,18 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "test3.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var scopeTypeId = await CreateScopeTypeAsync(client, "Environment2");
         var scopeValueId1 = await CreateScopeValueAsync(client, scopeTypeId, "Dev");
         var scopeValueId2 = await CreateScopeValueAsync(client, scopeTypeId, "Prod");
 
-        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId1 }, TestContext.Current.CancellationToken);
-        var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId2 }, TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId1 }, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId2 }, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
@@ -132,15 +133,15 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "test4.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var scopeTypeId = await CreateScopeTypeAsync(client, "Tier");
         var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "Production");
-        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
 
         var response = await client.DeleteAsync($"/api/v1/nodes/{nodeId}/tags/{scopeValueId}", TestContext.Current.CancellationToken);
 
@@ -160,7 +161,7 @@ public sealed class NodeTagEndpointsTests : IDisposable
     public async Task AssignNodeTag_NonExistentNode_ReturnsNotFound()
     {
         using var client = CreateAuthenticatedClient();
-        var request = new AssignNodeTagRequest { ScopeValueId = Guid.NewGuid() };
+        var request = new AddNodeTagRequest { ScopeValueId = Guid.NewGuid() };
 
         var response = await client.PostAsJsonAsync($"/api/v1/nodes/{Guid.NewGuid()}/tags", request, TestContext.Current.CancellationToken);
 
@@ -174,13 +175,13 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "invalidscope.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
-        var request = new AssignNodeTagRequest { ScopeValueId = Guid.NewGuid() };
+        var request = new AddNodeTagRequest { ScopeValueId = Guid.NewGuid() };
         var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -193,17 +194,17 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "duplicatetag.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var scopeTypeId = await CreateScopeTypeAsync(client, "DuplicateTest");
         var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "Value1");
 
-        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
-        var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AssignNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
+        await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
+        var response = await client.PostAsJsonAsync($"/api/v1/nodes/{nodeId}/tags", new AddNodeTagRequest { ScopeValueId = scopeValueId }, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
@@ -215,14 +216,15 @@ public sealed class NodeTagEndpointsTests : IDisposable
 
         var regKeyRequest = new CreateRegistrationKeyRequest();
         var registrationKeyResponse = await client.PostAsJsonAsync("/api/v1/admin/registration-keys", regKeyRequest, TestContext.Current.CancellationToken);
-        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestContext.Current.CancellationToken);
+        var regKey = await registrationKeyResponse.Content.ReadFromJsonAsync<RegistrationKeyResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         string keyValue = regKey!.Key!;
 
         var registerResponse = await client.PostAsJsonAsync("/api/v1/nodes/register", new RegisterNodeRequest { Fqdn = "removetag.local", RegistrationKey = keyValue }, TestContext.Current.CancellationToken);
-        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestContext.Current.CancellationToken))!.NodeId;
+        var nodeId = (await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken))!.NodeId;
 
         var response = await client.DeleteAsync($"/api/v1/nodes/{nodeId}/tags/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
+

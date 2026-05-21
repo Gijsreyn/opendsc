@@ -6,7 +6,7 @@ using System.Net;
 
 using AwesomeAssertions;
 
-using OpenDsc.Server.Endpoints;
+using OpenDsc.Contracts.Settings;
 
 using Xunit;
 
@@ -36,7 +36,7 @@ public sealed class RetentionSettingsEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/settings/retention", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var dto = await response.Content.ReadFromJsonAsync<RetentionSettingsDto>(TestContext.Current.CancellationToken);
+        var dto = await response.Content.ReadFromJsonAsync<RetentionSettingsSummary>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         dto.Should().NotBeNull();
         dto!.Enabled.Should().BeFalse();
         dto.KeepVersions.Should().Be(10);
@@ -82,7 +82,7 @@ public sealed class RetentionSettingsEndpointsTests : IDisposable
 
         var getResponse = await client.GetAsync("/api/v1/settings/retention", TestContext.Current.CancellationToken);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var dto = await getResponse.Content.ReadFromJsonAsync<RetentionSettingsDto>(TestContext.Current.CancellationToken);
+        var dto = await getResponse.Content.ReadFromJsonAsync<RetentionSettingsSummary>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         dto.Should().NotBeNull();
         dto!.Enabled.Should().BeTrue();
         dto.KeepVersions.Should().Be(5);
@@ -111,7 +111,7 @@ public sealed class RetentionSettingsEndpointsTests : IDisposable
         var putResponse = await client.PutAsJsonAsync("/api/v1/settings/retention", request, TestContext.Current.CancellationToken);
         putResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var dto = await putResponse.Content.ReadFromJsonAsync<RetentionSettingsDto>(TestContext.Current.CancellationToken);
+        var dto = await putResponse.Content.ReadFromJsonAsync<RetentionSettingsSummary>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         dto.Should().NotBeNull();
         dto!.KeepVersions.Should().Be(7);
         dto.KeepDays.Should().Be(45);
@@ -128,3 +128,4 @@ public sealed class RetentionSettingsEndpointsTests : IDisposable
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
+

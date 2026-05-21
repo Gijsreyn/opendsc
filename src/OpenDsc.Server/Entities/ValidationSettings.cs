@@ -2,6 +2,12 @@
 // You may use, distribute and modify this code under the
 // terms of the MIT license.
 
+using OpenDsc.Contracts.Configurations;
+
+// Copyright (c) Thomas Nieto - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+
 namespace OpenDsc.Server.Entities;
 
 public sealed class ValidationSettings
@@ -21,6 +27,6 @@ public sealed class ValidationSettings
     public bool AllowPreReleaseOverride { get; set; } = true;
     public bool AllowApprovalOverride { get; set; }
 
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset ModifiedAt { get; set; }
     public string? UpdatedBy { get; set; }
 }

@@ -7,8 +7,6 @@ using System.Text.Json;
 using AwesomeAssertions;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 using OpenDsc.Server.Authorization;
 using OpenDsc.Server.Data;
@@ -212,3 +210,4 @@ internal static class LoggerMock
         }
     }
 }
+

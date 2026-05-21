@@ -4,7 +4,8 @@
 
 using Microsoft.AspNetCore.Http.HttpResults;
 
-using OpenDsc.Server.Data;
+using OpenDsc.Contracts.Health;
+using OpenDsc.Contracts.Settings;
 
 namespace OpenDsc.Server.Endpoints;
 
@@ -24,24 +25,27 @@ public static class HealthEndpoints
             .WithDescription("Checks if the server is ready to accept requests, including database connectivity.");
     }
 
-    private static Ok<HealthResponse> GetHealth()
+    private static Ok<HealthStatus> GetHealth()
     {
-        return TypedResults.Ok(new HealthResponse
+        return TypedResults.Ok(new HealthStatus
         {
             Status = "Healthy",
             Timestamp = DateTimeOffset.UtcNow
         });
     }
 
-    private static async Task<Results<Ok<ReadinessResponse>, StatusCodeHttpResult>> GetReadiness(
-        ServerDbContext db,
+    private static async Task<Results<Ok<ReadinessStatus>, StatusCodeHttpResult>> GetReadiness(
+        IHealthService healthService,
         CancellationToken cancellationToken)
     {
         try
         {
-            await db.Database.CanConnectAsync(cancellationToken);
+            if (!await healthService.CanConnectAsync(cancellationToken))
+            {
+                return TypedResults.StatusCode(503);
+            }
 
-            return TypedResults.Ok(new ReadinessResponse
+            return TypedResults.Ok(new ReadinessStatus
             {
                 Status = "Ready",
                 Database = "Connected",
@@ -53,17 +57,4 @@ public static class HealthEndpoints
             return TypedResults.StatusCode(503);
         }
     }
-}
-
-public sealed class HealthResponse
-{
-    public string Status { get; set; } = string.Empty;
-    public DateTimeOffset Timestamp { get; set; }
-}
-
-public sealed class ReadinessResponse
-{
-    public string Status { get; set; } = string.Empty;
-    public string Database { get; set; } = string.Empty;
-    public DateTimeOffset Timestamp { get; set; }
 }

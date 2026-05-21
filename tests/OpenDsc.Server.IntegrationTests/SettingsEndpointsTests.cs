@@ -8,8 +8,8 @@ using System.Text.Json.Serialization;
 
 using AwesomeAssertions;
 
-using OpenDsc.Lcm.Contracts;
-using OpenDsc.Server.Contracts;
+using OpenDsc.Contracts.Lcm;
+using OpenDsc.Contracts.Settings;
 
 using Xunit;
 
@@ -39,7 +39,7 @@ public class SettingsEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/settings", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var settings = await response.Content.ReadFromJsonAsync<ServerSettingsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var settings = await response.Content.ReadFromJsonAsync<ServerSettingsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         settings.Should().NotBeNull();
     }
 
@@ -84,7 +84,7 @@ public class SettingsEndpointsTests : IDisposable
         var updateRequest = new UpdateServerSettingsRequest { StalenessMultiplier = 3.5 };
         var updateResponse = await client.PutAsJsonAsync("/api/v1/settings", updateRequest, TestContext.Current.CancellationToken);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await updateResponse.Content.ReadFromJsonAsync<ServerSettingsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var updated = await updateResponse.Content.ReadFromJsonAsync<ServerSettingsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         updated!.StalenessMultiplier.Should().Be(3.5);
     }
 
@@ -98,7 +98,7 @@ public class SettingsEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/settings/lcm-defaults", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var defaults = await response.Content.ReadFromJsonAsync<ServerLcmDefaultsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var defaults = await response.Content.ReadFromJsonAsync<ServerLcmDefaultsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         defaults.Should().NotBeNull();
         defaults!.DefaultConfigurationMode.Should().BeNull();
         defaults.DefaultConfigurationModeInterval.Should().BeNull();
@@ -130,7 +130,7 @@ public class SettingsEndpointsTests : IDisposable
         var updateResponse = await client.PutAsJsonAsync("/api/v1/settings/lcm-defaults", request, TestContext.Current.CancellationToken);
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var updated = await updateResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var updated = await updateResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         updated.Should().NotBeNull();
         updated!.DefaultConfigurationMode.Should().Be(ConfigurationMode.Remediate);
         updated.DefaultConfigurationModeInterval.Should().Be(TimeSpan.FromMinutes(30));
@@ -159,7 +159,7 @@ public class SettingsEndpointsTests : IDisposable
         }, TestContext.Current.CancellationToken);
 
         clearResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var cleared = await clearResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var cleared = await clearResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         cleared!.DefaultConfigurationMode.Should().BeNull();
         cleared.DefaultConfigurationModeInterval.Should().BeNull();
         cleared.DefaultReportCompliance.Should().BeNull();
@@ -191,7 +191,7 @@ public class SettingsEndpointsTests : IDisposable
 
         var getResponse = await client.GetAsync("/api/v1/settings/lcm-defaults", TestContext.Current.CancellationToken);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var fetched = await getResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsResponse>(JsonOptions, TestContext.Current.CancellationToken);
+        var fetched = await getResponse.Content.ReadFromJsonAsync<ServerLcmDefaultsSummary>(JsonOptions, TestContext.Current.CancellationToken);
         fetched!.DefaultConfigurationMode.Should().Be(ConfigurationMode.Monitor);
         fetched.DefaultConfigurationModeInterval.Should().Be(TimeSpan.FromMinutes(10));
         fetched.DefaultReportCompliance.Should().BeTrue();
@@ -246,3 +246,4 @@ public class SettingsEndpointsTests : IDisposable
         GC.SuppressFinalize(this);
     }
 }
+

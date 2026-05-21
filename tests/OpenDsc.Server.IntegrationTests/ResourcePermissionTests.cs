@@ -8,7 +8,7 @@ using AwesomeAssertions;
 
 using Microsoft.EntityFrameworkCore;
 
-using OpenDsc.Server.Contracts;
+using OpenDsc.Contracts.Permissions;
 using OpenDsc.Server.Data;
 
 using Xunit;
@@ -180,9 +180,9 @@ public class ResourcePermissionTests : IAsyncLifetime
         var response = await _adminClient.GetAsync($"/api/v1/configurations/{configName}/permissions", TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var permissions = await response.Content.ReadFromJsonAsync<List<PermissionEntryDto>>(TestContext.Current.CancellationToken);
+        var permissions = await response.Content.ReadFromJsonAsync<List<PermissionEntry>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         permissions.Should().NotBeNullOrEmpty();
-        permissions!.Should().ContainSingle(p => p.PrincipalId == granteeId && p.Level == "Read");
+        permissions!.Should().ContainSingle(p => p.PrincipalId == granteeId && p.Level == ResourcePermission.Read);
     }
 
     [Fact]
@@ -290,9 +290,9 @@ public class ResourcePermissionTests : IAsyncLifetime
         var response = await _adminClient.GetAsync($"/api/v1/composite-configurations/{name}/permissions", TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var permissions = await response.Content.ReadFromJsonAsync<List<PermissionEntryDto>>(TestContext.Current.CancellationToken);
+        var permissions = await response.Content.ReadFromJsonAsync<List<PermissionEntry>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         permissions.Should().NotBeNullOrEmpty();
-        permissions!.Should().ContainSingle(p => p.PrincipalId == granteeId && p.Level == "Modify");
+        permissions!.Should().ContainSingle(p => p.PrincipalId == granteeId && p.Level == ResourcePermission.Modify);
     }
 
     [Fact]
@@ -356,3 +356,4 @@ public class ResourcePermissionTests : IAsyncLifetime
         readResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }
+

@@ -3,7 +3,6 @@
 // terms of the MIT license.
 
 using System.Net;
-using System.Net.Http.Json;
 
 using AwesomeAssertions;
 
@@ -41,7 +40,7 @@ public sealed class OidcEndpoints_NoProviders_Tests : IAsyncLifetime
         var response = await _client.GetAsync("/api/v1/auth/oidc/providers", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var providers = await response.Content.ReadFromJsonAsync<OidcProviderDto[]>(TestContext.Current.CancellationToken);
+        var providers = await response.Content.ReadFromJsonAsync<OidcProviderDto[]>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         providers.Should().NotBeNull();
         providers.Should().BeEmpty();
     }
@@ -90,7 +89,7 @@ public sealed class OidcEndpointsTests : IAsyncLifetime
         var response = await _unauthClient.GetAsync("/api/v1/auth/oidc/providers", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var providers = await response.Content.ReadFromJsonAsync<OidcProviderDto[]>(TestContext.Current.CancellationToken);
+        var providers = await response.Content.ReadFromJsonAsync<OidcProviderDto[]>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         providers.Should().NotBeNull();
         providers.Should().HaveCount(1);
         providers![0].Name.Should().Be(OidcServerWebApplicationFactory.ProviderName);
@@ -162,7 +161,7 @@ public sealed class OidcEndpointsTests : IAsyncLifetime
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        body.Should().Contain("External authentication");
+        body.Should().Contain("Password changes are not available");
     }
 
     // ─── GET /api/v1/auth/me ─────────────────────────────────────────────────
@@ -175,7 +174,7 @@ public sealed class OidcEndpointsTests : IAsyncLifetime
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var user = await response.Content.ReadFromJsonAsync<CurrentUserDto>(TestContext.Current.CancellationToken);
+        var user = await response.Content.ReadFromJsonAsync<CurrentUserDto>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         user.Should().NotBeNull();
         user!.AuthProvider.Should().Be(OidcServerWebApplicationFactory.ProviderName);
     }
@@ -188,7 +187,7 @@ public sealed class OidcEndpointsTests : IAsyncLifetime
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var user = await response.Content.ReadFromJsonAsync<CurrentUserDto>(TestContext.Current.CancellationToken);
+        var user = await response.Content.ReadFromJsonAsync<CurrentUserDto>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         user.Should().NotBeNull();
         user!.AuthProvider.Should().BeNull();
     }
@@ -295,7 +294,7 @@ public sealed class OidcMiddlewareTests : IAsyncLifetime
             IsActive = true,
             RequirePasswordChange = true,
             PasswordHash = null,
-            AccountType = OpenDsc.Server.Entities.AccountType.User,
+            AccountType = OpenDsc.Contracts.Users.AccountType.User,
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -334,3 +333,4 @@ file record CurrentUserDto(
     string AccountType,
     List<string> Roles,
     string? AuthProvider);
+

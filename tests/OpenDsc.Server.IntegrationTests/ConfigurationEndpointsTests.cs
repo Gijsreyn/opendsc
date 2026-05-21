@@ -9,8 +9,7 @@ using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 
 using OpenDsc.Server.Data;
-using OpenDsc.Server.Endpoints;
-using OpenDsc.Server.Entities;
+using OpenDsc.Contracts.Configurations;
 
 using Xunit;
 
@@ -49,7 +48,7 @@ public class ConfigurationEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/configurations", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var configs = await response.Content.ReadFromJsonAsync<List<ConfigurationSummaryDto>>(TestContext.Current.CancellationToken);
+        var configs = await response.Content.ReadFromJsonAsync<List<ConfigurationSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         configs.Should().NotBeNull();
         configs.Should().HaveCount(1);
         configs![0].Name.Should().Be("test-config");
@@ -118,7 +117,7 @@ public class ConfigurationEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/configurations/get-config-test", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var config = await response.Content.ReadFromJsonAsync<ConfigurationDetailsDto>(TestContext.Current.CancellationToken);
+        var config = await response.Content.ReadFromJsonAsync<ConfigurationDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         config.Should().NotBeNull();
         config!.Name.Should().Be("get-config-test");
     }
@@ -188,7 +187,7 @@ public class ConfigurationEndpointsTests : IDisposable
         var response = await client.GetAsync("/api/v1/configurations", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var configs = await response.Content.ReadFromJsonAsync<List<ConfigurationSummaryDto>>(TestContext.Current.CancellationToken);
+        var configs = await response.Content.ReadFromJsonAsync<List<ConfigurationSummary>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         configs.Should().NotBeNull();
         configs!.Count.Should().BeGreaterThanOrEqualTo(2);
         configs.Should().Contain(c => c.Name == "config1");
@@ -227,12 +226,11 @@ public class ConfigurationEndpointsTests : IDisposable
         using var configContent = new MultipartFormDataContent();
         configContent.Add(new StringContent("publish-test-config"), "name");
         configContent.Add(new StringContent("main.dsc.yaml"), "entryPoint");
-        configContent.Add(new StringContent("true"), "isDraft");
         var configFile = new ByteArrayContent("content"u8.ToArray());
         configFile.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         configContent.Add(configFile, "files", "main.dsc.yaml");
         var createResponse = await client.PostAsync("/api/v1/configurations", configContent, TestContext.Current.CancellationToken);
-        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetailsDto>(TestContext.Current.CancellationToken);
+        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         var response = await client.PutAsync($"/api/v1/configurations/publish-test-config/versions/{configDto!.LatestVersion}/publish", null, TestContext.Current.CancellationToken);
 
@@ -248,7 +246,6 @@ public class ConfigurationEndpointsTests : IDisposable
         using var configContent = new MultipartFormDataContent();
         configContent.Add(new StringContent(configName), "name");
         configContent.Add(new StringContent("config.dsc.yaml"), "entryPoint");
-        configContent.Add(new StringContent("true"), "isDraft");
 
         // Create a configuration file with parameters block
         var configFileContent = @"
@@ -267,7 +264,7 @@ resources: []
 
         var createResponse = await client.PostAsync("/api/v1/configurations", configContent, TestContext.Current.CancellationToken);
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetailsDto>(TestContext.Current.CancellationToken);
+        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         // Publish should succeed - entry point file should be found in v{version} directory
         var publishResponse = await client.PutAsync($"/api/v1/configurations/{configName}/versions/{configDto!.LatestVersion}/publish", null, TestContext.Current.CancellationToken);
@@ -298,7 +295,7 @@ resources: []
         var response = await client.GetAsync("/api/v1/configurations/versions-list-test/versions", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var versions = await response.Content.ReadFromJsonAsync<List<ConfigurationVersionDto>>(TestContext.Current.CancellationToken);
+        var versions = await response.Content.ReadFromJsonAsync<List<ConfigurationVersionDetails>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         versions.Should().NotBeNull();
         versions!.Count.Should().BeGreaterThanOrEqualTo(2);
     }
@@ -328,7 +325,7 @@ resources: []
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var versionsResponse = await client.GetAsync("/api/v1/configurations/version-entrypoint-test/versions", TestContext.Current.CancellationToken);
-        var versions = await versionsResponse.Content.ReadFromJsonAsync<List<ConfigurationVersionDto>>(TestContext.Current.CancellationToken);
+        var versions = await versionsResponse.Content.ReadFromJsonAsync<List<ConfigurationVersionDetails>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         versions.Should().NotBeNull();
         var v1 = versions!.FirstOrDefault(v => v.Version == "1.0.0");
         var v2 = versions.FirstOrDefault(v => v.Version == "2.0.0");
@@ -354,7 +351,7 @@ resources: []
         var response = await client.GetAsync("/api/v1/configurations/versions-entrypoint-list-test/versions", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var versions = await response.Content.ReadFromJsonAsync<List<ConfigurationVersionDto>>(TestContext.Current.CancellationToken);
+        var versions = await response.Content.ReadFromJsonAsync<List<ConfigurationVersionDetails>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         versions.Should().NotBeNull();
         versions!.Should().HaveCount(1);
         versions[0].EntryPoint.Should().Be("config.dsc.yaml");
@@ -383,7 +380,7 @@ resources: []
         createV2Response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var versionsResponse = await client.GetAsync("/api/v1/configurations/inherit-entrypoint-test/versions", TestContext.Current.CancellationToken);
-        var versions = await versionsResponse.Content.ReadFromJsonAsync<List<ConfigurationVersionDto>>(TestContext.Current.CancellationToken);
+        var versions = await versionsResponse.Content.ReadFromJsonAsync<List<ConfigurationVersionDetails>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         var v2 = versions!.FirstOrDefault(v => v.Version == "2.0.0");
         v2.Should().NotBeNull();
         v2!.EntryPoint.Should().Be("inherited.dsc.yaml");
@@ -404,12 +401,11 @@ resources: []
 
         using var v2Content = new MultipartFormDataContent();
         v2Content.Add(new StringContent("2.0.0"), "version");
-        v2Content.Add(new StringContent("true"), "isDraft");
         var v2File = new ByteArrayContent("v2"u8.ToArray());
         v2File.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         v2Content.Add(v2File, "files", "main.dsc.yaml");
         var v2Response = await client.PostAsync("/api/v1/configurations/delete-version-test/versions", v2Content, TestContext.Current.CancellationToken);
-        var v2Dto = await v2Response.Content.ReadFromJsonAsync<ConfigurationVersionDto>(TestContext.Current.CancellationToken);
+        var v2Dto = await v2Response.Content.ReadFromJsonAsync<ConfigurationVersionDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         var response = await client.DeleteAsync($"/api/v1/configurations/delete-version-test/versions/{v2Dto!.Version}", TestContext.Current.CancellationToken);
 
@@ -462,7 +458,7 @@ resources: []
 
         // Attempt to publish - should fail due to breaking changes
         schemaResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        var publishResult = await schemaResponse.Content.ReadFromJsonAsync<PublishResultDto>(TestContext.Current.CancellationToken);
+        var publishResult = await schemaResponse.Content.ReadFromJsonAsync<OpenDsc.Contracts.Parameters.PublishResult>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         publishResult.Should().NotBeNull();
         publishResult!.Success.Should().BeFalse();
         publishResult.CompatibilityReport.Should().NotBeNull();
@@ -572,12 +568,11 @@ resources: []
         using var configContent = new MultipartFormDataContent();
         configContent.Add(new StringContent("cookie-auth-test-config"), "name");
         configContent.Add(new StringContent("main.dsc.yaml"), "entryPoint");
-        configContent.Add(new StringContent("true"), "isDraft");
         var configFile = new ByteArrayContent("content"u8.ToArray());
         configFile.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         configContent.Add(configFile, "files", "main.dsc.yaml");
         var createResponse = await client.PostAsync("/api/v1/configurations", configContent, TestContext.Current.CancellationToken);
-        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetailsDto>(TestContext.Current.CancellationToken);
+        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         var response = await client.PutAsync($"/api/v1/configurations/cookie-auth-test-config/versions/{configDto!.LatestVersion}/publish", null, TestContext.Current.CancellationToken);
 
@@ -588,7 +583,7 @@ resources: []
     [Fact]
     public async Task PublishConfigurationVersion_ReturnsUpdatedVersionData()
     {
-        // Root cause fix: Verify that the publish endpoint returns the updated isDraft status
+        // Root cause fix: Verify that the publish endpoint returns the updated version status
         // This allows the UI to update immediately without requiring a database reload
         using var client = CreateAuthenticatedClient();
         var configName = $"publish-data-test-{Guid.NewGuid()}";
@@ -596,12 +591,11 @@ resources: []
         using var configContent = new MultipartFormDataContent();
         configContent.Add(new StringContent(configName), "name");
         configContent.Add(new StringContent("main.dsc.yaml"), "entryPoint");
-        configContent.Add(new StringContent("true"), "isDraft");
         var configFile = new ByteArrayContent("resources: []"u8.ToArray());
         configFile.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         configContent.Add(configFile, "files", "main.dsc.yaml");
         var createResponse = await client.PostAsync("/api/v1/configurations", configContent, TestContext.Current.CancellationToken);
-        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetailsDto>(TestContext.Current.CancellationToken);
+        var configDto = await createResponse.Content.ReadFromJsonAsync<ConfigurationDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         // Publish the draft version
         var publishResponse = await client.PutAsync(
@@ -612,7 +606,7 @@ resources: []
         publishResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Verify the response contains the updated version data
-        var publishedVersion = await publishResponse.Content.ReadFromJsonAsync<ConfigurationVersionDto>(TestContext.Current.CancellationToken);
+        var publishedVersion = await publishResponse.Content.ReadFromJsonAsync<ConfigurationVersionDetails>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
         publishedVersion.Should().NotBeNull();
         publishedVersion!.Version.Should().Be(configDto.LatestVersion);
         // This is the key fix: Status must be Published after publishing
@@ -774,40 +768,3 @@ parameters:
     }
 }
 
-public sealed class PublishResultDto
-{
-    public required bool Success { get; init; }
-    public CompatibilityReportDto? CompatibilityReport { get; init; }
-    public List<ParameterFileMigrationStatusDto>? MigrationRequirements { get; init; }
-}
-
-public sealed class CompatibilityReportDto
-{
-    public required bool HasBreakingChanges { get; init; }
-    public required List<ParameterChangeDto> BreakingChanges { get; init; }
-    public required List<ParameterChangeDto> NonBreakingChanges { get; init; }
-}
-
-public sealed class ParameterChangeDto
-{
-    public required string ParameterName { get; init; }
-    public required string ChangeType { get; init; }
-    public required string Details { get; init; }
-}
-
-public sealed class ParameterFileMigrationStatusDto
-{
-    public required string ScopeTypeName { get; init; }
-    public string? ScopeValue { get; init; }
-    public required string Version { get; init; }
-    public required int MajorVersion { get; init; }
-    public required bool NeedsMigration { get; init; }
-    public List<ValidationErrorDto>? Errors { get; init; }
-}
-
-public sealed class ValidationErrorDto
-{
-    public required string Path { get; init; }
-    public required string Message { get; init; }
-    public required string Code { get; init; }
-}

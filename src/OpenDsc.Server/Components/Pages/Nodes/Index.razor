@@ -1,9 +1,10 @@
 @page "/nodes"
 @attribute [Authorize(Policy = NodePermissions.Read)]
-@inject ServerDbContext Db
+@inject INodeService NodeService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@using OpenDsc.Lcm.Contracts
+@using OpenDsc.Contracts.Lcm
+@using OpenDsc.Contracts.Nodes
 
 <PageTitle>Nodes</PageTitle>
 
@@ -17,11 +18,11 @@
                               Clearable="true" Immediate="true" ValueChanged="@((string value) => OnSearchChanged(value))" />
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudSelect T="NodeStatus?" Label="Filter by Status" Value="@selectedStatus" Clearable="true"
-                           ValueChanged="@((NodeStatus? value) => OnStatusFilterChanged(value))">
-                    <MudSelectItem Value="@((NodeStatus?)NodeStatus.Compliant)">Compliant</MudSelectItem>
-                    <MudSelectItem Value="@((NodeStatus?)NodeStatus.NonCompliant)">Non-Compliant</MudSelectItem>
-                    <MudSelectItem Value="@((NodeStatus?)NodeStatus.Error)">Error</MudSelectItem>
+                <MudSelect T="string" Label="Filter by Status" Value="@selectedStatus" Clearable="true"
+                           ValueChanged="@((string value) => OnStatusFilterChanged(value))">
+                    <MudSelectItem Value="@("Compliant")">Compliant</MudSelectItem>
+                    <MudSelectItem Value="@("NonCompliant")">Non-Compliant</MudSelectItem>
+                    <MudSelectItem Value="@("Error")">Error</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="4">
@@ -32,7 +33,7 @@
     </MudCardContent>
 </MudCard>
 
-<MudDataGrid T="Node" Items="@filteredNodes" Loading="@isLoading" Hover="true" Dense="true">
+<MudDataGrid T="NodeSummary" Items="@filteredNodes" Loading="@isLoading" Hover="true" Dense="true">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Registered Nodes</MudText>
         <MudSpacer />
@@ -90,13 +91,12 @@
 </MudDataGrid>
 
 @code {
-    private List<Node> nodes = [];
-    private List<Node> filteredNodes = [];
+    private List<NodeSummary> nodes = [];
+    private List<NodeSummary> filteredNodes = [];
     private bool isLoading = true;
     private string searchFqdn = string.Empty;
     private string searchConfiguration = string.Empty;
-    private NodeStatus? selectedStatus;
-    private double stalenessMultiplier = 2.0;
+    private string? selectedStatus;
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,10 +108,7 @@
         isLoading = true;
         try
         {
-            Db.ChangeTracker.Clear();
-            nodes = await Db.Nodes.AsNoTracking().OrderBy(n => n.Fqdn).ToListAsync();
-            var settings = await Db.ServerSettings.AsNoTracking().FirstOrDefaultAsync();
-            stalenessMultiplier = settings?.StalenessMultiplier ?? 2.0;
+            nodes = (await NodeService.GetNodesAsync()).ToList();
             ApplyFilters();
         }
         catch (Exception ex)
@@ -132,7 +129,7 @@
                 !n.Fqdn.Contains(searchFqdn, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (selectedStatus.HasValue && n.Status != selectedStatus.Value)
+            if (!string.IsNullOrWhiteSpace(selectedStatus) && !string.Equals(n.Status.ToString(), selectedStatus, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             if (!string.IsNullOrWhiteSpace(searchConfiguration) &&
@@ -150,7 +147,7 @@
         ApplyFilters();
     }
 
-    private void OnStatusFilterChanged(NodeStatus? value)
+    private void OnStatusFilterChanged(string? value)
     {
         selectedStatus = value;
         ApplyFilters();
@@ -185,8 +182,5 @@
         _ => Color.Default
     };
 
-    private bool IsStale(Node n) =>
-        n.LastCheckIn.HasValue
-        && n.ConfigurationModeInterval.HasValue
-        && (DateTimeOffset.UtcNow - n.LastCheckIn.Value) > n.ConfigurationModeInterval.Value * stalenessMultiplier;
+    private static bool IsStale(NodeSummary n) => n.IsStale;
 }

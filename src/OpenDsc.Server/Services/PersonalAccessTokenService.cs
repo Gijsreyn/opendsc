@@ -7,6 +7,7 @@ using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 
+using OpenDsc.Contracts.Users;
 using OpenDsc.Server.Data;
 using OpenDsc.Server.Entities;
 
@@ -25,7 +26,7 @@ public interface IPersonalAccessTokenService
     /// <param name="scopes">Permissions scoped to this token.</param>
     /// <param name="expiresAt">Optional expiration date.</param>
     /// <returns>Plaintext token (shown only once) and token metadata.</returns>
-    Task<(string Token, PersonalAccessToken Metadata)> CreateTokenAsync(
+    Task<(string Token, TokenMetadata Metadata)> CreateTokenAsync(
         Guid userId,
         string name,
         string[] scopes,
@@ -49,7 +50,7 @@ public interface IPersonalAccessTokenService
     /// </summary>
     /// <param name="userId">User ID.</param>
     /// <returns>List of token metadata.</returns>
-    Task<List<PersonalAccessToken>> GetUserTokensAsync(Guid userId);
+    Task<List<TokenMetadata>> GetUserTokensAsync(Guid userId);
 
     /// <summary>
     /// Updates last used timestamp and IP address asynchronously.
@@ -57,6 +58,19 @@ public interface IPersonalAccessTokenService
     /// <param name="tokenId">Token ID.</param>
     /// <param name="ipAddress">IP address.</param>
     Task UpdateLastUsedAsync(Guid tokenId, string ipAddress);
+
+    /// <summary>
+    /// Updates token scopes for a specific token owned by a specific user.
+    /// </summary>
+    /// <param name="tokenId">Token ID.</param>
+    /// <param name="userId">Owning user ID.</param>
+    /// <param name="request">Requested scopes.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task UpdateScopesAsync(
+        Guid tokenId,
+        Guid userId,
+        UpdateTokenScopesRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -70,7 +84,7 @@ public sealed partial class PersonalAccessTokenService(
     private const int TokenBodyLength = 40;
     private const string TokenPrefix = "pat_";
 
-    public async Task<(string Token, PersonalAccessToken Metadata)> CreateTokenAsync(
+    public async Task<(string Token, TokenMetadata Metadata)> CreateTokenAsync(
         Guid userId,
         string name,
         string[] scopes,
@@ -117,7 +131,16 @@ public sealed partial class PersonalAccessTokenService(
         await db.SaveChangesAsync();
 
         LogPatCreated(userId);
-        return (token, patEntity);
+        return (token, new TokenMetadata
+        {
+            Id = patEntity.Id,
+            Name = patEntity.Name,
+            TokenPrefix = patEntity.TokenPrefix,
+            Scopes = scopes,
+            ExpiresAt = patEntity.ExpiresAt,
+            IsRevoked = false,
+            CreatedAt = patEntity.CreatedAt
+        });
     }
 
     public async Task<(Guid TokenId, Guid UserId, string[] Scopes)?> ValidateTokenAsync(string token)
@@ -171,12 +194,23 @@ public sealed partial class PersonalAccessTokenService(
         }
     }
 
-    public async Task<List<PersonalAccessToken>> GetUserTokensAsync(Guid userId)
+    public async Task<List<TokenMetadata>> GetUserTokensAsync(Guid userId)
     {
         return (await db.PersonalAccessTokens
             .Where(t => t.UserId == userId)
             .ToListAsync())
             .OrderByDescending(t => t.CreatedAt)
+            .Select(t => new TokenMetadata
+            {
+                Id = t.Id,
+                Name = t.Name,
+                TokenPrefix = t.TokenPrefix,
+                Scopes = JsonSerializer.Deserialize<IReadOnlyList<string>>(t.Scopes) ?? [],
+                ExpiresAt = t.ExpiresAt,
+                LastUsedAt = t.LastUsedAt,
+                IsRevoked = t.IsRevoked,
+                CreatedAt = t.CreatedAt
+            })
             .ToList();
     }
 
@@ -189,6 +223,29 @@ public sealed partial class PersonalAccessTokenService(
             token.LastUsedIpAddress = ipAddress;
             await db.SaveChangesAsync();
         }
+    }
+
+    public async Task UpdateScopesAsync(
+        Guid tokenId,
+        Guid userId,
+        UpdateTokenScopesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var token = await db.PersonalAccessTokens
+            .FirstOrDefaultAsync(t => t.Id == tokenId, cancellationToken);
+
+        if (token is null || token.UserId != userId)
+        {
+            throw new KeyNotFoundException("Token not found");
+        }
+
+        token.Scopes = JsonSerializer.Serialize((request.Scopes ?? [])
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(s => s)
+            .ToArray());
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     [LoggerMessage(EventId = EventIds.PatCreated, Level = LogLevel.Information, Message = "Personal access token created for user {UserId}")]

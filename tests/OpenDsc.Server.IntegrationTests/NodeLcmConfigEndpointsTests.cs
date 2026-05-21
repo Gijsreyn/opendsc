@@ -8,8 +8,9 @@ using System.Text.Json.Serialization;
 
 using AwesomeAssertions;
 
-using OpenDsc.Lcm.Contracts;
-using OpenDsc.Server.Contracts;
+using OpenDsc.Contracts.Lcm;
+using OpenDsc.Contracts.Nodes;
+using OpenDsc.Contracts.Settings;
 
 using Xunit;
 
@@ -42,7 +43,7 @@ public class NodeLcmConfigEndpointsTests : IDisposable
         });
 
         registerResponse.EnsureSuccessStatusCode();
-        var registration = await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>();
+        var registration = await registerResponse.Content.ReadFromJsonAsync<RegisterNodeResponse>(TestJsonOptions.Default);
         return registration!.NodeId;
     }
 
@@ -434,3 +435,4 @@ public class NodeLcmConfigEndpointsTests : IDisposable
         config.ReportCompliance.Should().BeNull();
     }
 }
+

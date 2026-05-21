@@ -2,6 +2,8 @@
 // You may use, distribute and modify this code under the
 // terms of the MIT license.
 
+using OpenDsc.Contracts.Configurations;
+
 namespace OpenDsc.Server.Entities;
 
 public sealed class ScopeType
@@ -14,7 +16,7 @@ public sealed class ScopeType
     public bool IsEnabled { get; set; } = true;
     public ScopeValueMode ValueMode { get; set; } = ScopeValueMode.Unrestricted;
     public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTimeOffset? ModifiedAt { get; set; }
 
     public ICollection<ScopeValue> ScopeValues { get; set; } = [];
     public ICollection<ParameterFile> ParameterFiles { get; set; } = [];
