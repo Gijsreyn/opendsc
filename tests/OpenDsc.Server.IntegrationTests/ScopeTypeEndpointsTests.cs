@@ -180,6 +180,48 @@ public sealed class ScopeTypeEndpointsTests : IDisposable
     }
 
     [Fact]
+    public async Task GetScopeTypeUsageCount_WithValidId_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+        var allScopes = await client.GetFromJsonAsync<List<ScopeTypeDetails>>("/api/v1/scope-types", TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        var defaultScope = allScopes!.First(s => s.Name == "Default");
+
+        var response = await client.GetAsync($"/api/v1/scope-types/{defaultScope.Id}/usage-count", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var usage = await response.Content.ReadFromJsonAsync<int>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        usage.Should().BeGreaterThanOrEqualTo(0);
+    }
+
+    [Fact]
+    public async Task GetScopeValueUsageCount_WithValidId_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+        var scopeTypeId = await CreateScopeTypeAsync(client, "UsageCountScope");
+        var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "UsageValue");
+
+        var response = await client.GetAsync($"/api/v1/scope-types/values/{scopeValueId}/usage-count", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var usage = await response.Content.ReadFromJsonAsync<int>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        usage.Should().BeGreaterThanOrEqualTo(0);
+    }
+
+    [Fact]
+    public async Task GetScopeNodes_ForNodeScope_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+        var allScopes = await client.GetFromJsonAsync<List<ScopeTypeDetails>>("/api/v1/scope-types", TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        var nodeScope = allScopes!.First(s => s.Name == "Node");
+
+        var response = await client.GetAsync($"/api/v1/scope-types/{nodeScope.Id}/nodes", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var nodes = await response.Content.ReadFromJsonAsync<List<ScopeNodeInfo>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        nodes.Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task GetScopeType_WithValidId_ReturnsOk()
     {
         using var client = CreateAuthenticatedClient();
@@ -440,6 +482,58 @@ public sealed class ScopeTypeEndpointsTests : IDisposable
         var response = await client.PutAsJsonAsync("/api/v1/scope-types/reorder", request, TestJsonOptions.Default, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetScopeSummary_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+
+        var response = await client.GetAsync("/api/v1/scope-types/summary", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<ScopeSummaryResponse>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        result.Should().NotBeNull();
+        result!.ScopeTypes.Should().Contain(st => st.Name == "Default");
+    }
+
+    [Fact]
+    public async Task GetAllScopeTypesWithValues_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+
+        var response = await client.GetAsync("/api/v1/scope-types/with-values", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<List<ScopeTypeWithValuesDetails>>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetScopeTypeUsageCount_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+        var scopeTypeId = await CreateScopeTypeAsync(client, $"Usage-{Guid.NewGuid()}");
+
+        var response = await client.GetAsync($"/api/v1/scope-types/{scopeTypeId}/usage-count", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var usage = await response.Content.ReadFromJsonAsync<int>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        usage.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetScopeValueUsageCount_ReturnsOk()
+    {
+        using var client = CreateAuthenticatedClient();
+        var scopeTypeId = await CreateScopeTypeAsync(client, $"ValueUsage-{Guid.NewGuid()}");
+        var scopeValueId = await CreateScopeValueAsync(client, scopeTypeId, "v1");
+
+        var response = await client.GetAsync($"/api/v1/scope-types/values/{scopeValueId}/usage-count", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var usage = await response.Content.ReadFromJsonAsync<int>(TestJsonOptions.Default, TestContext.Current.CancellationToken);
+        usage.Should().Be(0);
     }
 }
 
