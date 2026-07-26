@@ -118,11 +118,17 @@ public sealed class CommandBuilder
             Description = "JSON input for the desired state"
         };
 
+        var whatIfOption = new Option<bool>("--what-if", "-w")
+        {
+            Description = "Preview the changes the set operation would make without applying them"
+        };
+
         if (!IsSingleResource)
         {
             command.Options.Add(_requiredResourceOption);
         }
         command.Options.Add(inputOption);
+        command.Options.Add(whatIfOption);
 
         command.SetAction(parseResult =>
         {
@@ -130,8 +136,9 @@ public sealed class CommandBuilder
             {
                 var resourceType = parseResult.GetValue(_requiredResourceOption);
                 var input = parseResult.GetValue(inputOption);
+                var whatIf = parseResult.GetValue(whatIfOption);
                 var registration = ResolveResource(resourceType, IsSingleResource);
-                CommandExecutor.ExecuteSet(registration, input);
+                CommandExecutor.ExecuteSet(registration, input, whatIf);
             }
             catch (Exception ex)
             {
@@ -186,11 +193,17 @@ public sealed class CommandBuilder
             Description = "JSON input identifying the resource instance"
         };
 
+        var whatIfOption = new Option<bool>("--what-if", "-w")
+        {
+            Description = "Preview the changes the delete operation would make without applying them"
+        };
+
         if (!IsSingleResource)
         {
             command.Options.Add(_requiredResourceOption);
         }
         command.Options.Add(inputOption);
+        command.Options.Add(whatIfOption);
 
         command.SetAction(parseResult =>
         {
@@ -198,8 +211,9 @@ public sealed class CommandBuilder
             {
                 var resourceType = parseResult.GetValue(_requiredResourceOption);
                 var input = parseResult.GetValue(inputOption);
+                var whatIf = parseResult.GetValue(whatIfOption);
                 var registration = ResolveResource(resourceType, IsSingleResource);
-                CommandExecutor.ExecuteDelete(registration, input);
+                CommandExecutor.ExecuteDelete(registration, input, whatIf);
             }
             catch (Exception ex)
             {
