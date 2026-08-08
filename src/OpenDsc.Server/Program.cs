@@ -4,6 +4,7 @@
 
 using System.Runtime.InteropServices;
 
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 
 using MudBlazor.Services;
@@ -37,6 +38,16 @@ builder.Configuration
     .AddCommandLine(args);
 
 builder.Services.Configure<ServerConfig>(builder.Configuration.GetSection("Server:Data"));
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    var serverConfig = new ServerConfig();
+    builder.Configuration.GetSection("Server:Data").Bind(serverConfig);
+    var keysDirectory = Path.Combine(serverConfig.DataDirectory, "dataprotection-keys");
+    Directory.CreateDirectory(keysDirectory);
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(keysDirectory));
+}
 
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
@@ -138,7 +149,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseStaticFiles();
+// MapStaticAssets (not UseStaticFiles) is required to serve framework
+// assets like _framework/blazor.web.js, which are no longer published as
+// physical files in wwwroot
+app.MapStaticAssets();
 
 app.UseAuthentication();
 app.UseAuthorization();

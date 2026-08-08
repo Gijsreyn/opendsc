@@ -42,6 +42,18 @@ docker-compose --profile postgres up -d
 docker-compose --profile sqlserver up -d
 ```
 
+The container listens on `https://localhost:8443` (web UI and API) and
+`http://localhost:8080` (health checks only). HTTPS is required for sign-in
+(auth cookies are marked `Secure`) and for node mTLS authentication. If no
+server certificate is configured, the container generates a self-signed
+certificate on first start and stores it in the `/app/data/certs` volume. To
+use your own certificate, mount it into the container and set:
+
+```sh
+ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certs/server.pfx
+ASPNETCORE_Kestrel__Certificates__Default__Password=<password>
+```
+
 ### Running Locally
 
 ```sh
