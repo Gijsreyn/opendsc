@@ -226,4 +226,65 @@ public class WhatIfCommandTests
         // Assert
         Assert.Empty(parseResult.Errors);
     }
+
+    [Fact]
+    public void SetCommand_NonWhatIfResource_HasNoWhatIfOption()
+    {
+        // Arrange
+        var builder = new CommandBuilder();
+        builder.AddResource<TestResourceAll, TestSchema>(new TestResourceAll());
+
+        // Act
+        var root = builder.Build();
+        var setCommand = root.Subcommands.First(c => c.Name == "set");
+
+        // Assert
+        Assert.DoesNotContain(setCommand.Options, o => o.Name == "--what-if");
+    }
+
+    [Fact]
+    public void DeleteCommand_NonWhatIfResource_HasNoWhatIfOption()
+    {
+        // Arrange
+        var builder = new CommandBuilder();
+        builder.AddResource<TestResourceAll, TestSchema>(new TestResourceAll());
+
+        // Act
+        var root = builder.Build();
+        var deleteCommand = root.Subcommands.First(c => c.Name == "delete");
+
+        // Assert
+        Assert.DoesNotContain(deleteCommand.Options, o => o.Name == "--what-if");
+    }
+
+    [Fact]
+    public void SetCommand_NonWhatIfResource_WhatIfArgumentProducesParseError()
+    {
+        // Arrange
+        var builder = new CommandBuilder();
+        builder.AddResource<TestResourceAll, TestSchema>(new TestResourceAll());
+        var root = builder.Build();
+
+        // Act
+        var parseResult = root.Parse(["set", "--input", """{"name":"test"}""", "--what-if"]);
+
+        // Assert
+        Assert.NotEmpty(parseResult.Errors);
+    }
+
+    [Fact]
+    public void SetCommand_MixedResources_HasWhatIfOption()
+    {
+        // Arrange
+        var builder = new CommandBuilder();
+        builder.AddResource<TestResourceWithWhatIf, TestSchema>(new TestResourceWithWhatIf());
+        builder.AddResource<TestResourceAll, TestSchema>(new TestResourceAll());
+
+        // Act
+        var root = builder.Build();
+        var setCommand = root.Subcommands.First(c => c.Name == "set");
+
+        // Assert
+        Assert.Contains(setCommand.Options, o => o.Name == "--what-if");
+    }
 }
